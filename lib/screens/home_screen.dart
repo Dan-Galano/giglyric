@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:galano_final_project/components/home_empty.dart';
+import 'package:galano_final_project/data/hive_boxes.dart';
 import 'package:galano_final_project/models/lyrics.dart';
 import 'package:galano_final_project/screens/lyrics.dart';
 import 'package:gap/gap.dart';
@@ -13,46 +14,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
+  void initState() {
+    super.initState();
+    fetchLyrics();
+  }
+
+  List<SongLyrics> downloadedSongsList = [];
+
+  Future<void> fetchLyrics() async {
+    for (int i = 0; i < lyricsBox.length; i++) {
+      SongLyrics songLyrics = lyricsBox.getAt(i) as SongLyrics;
+      setState(() {
+        downloadedSongsList.add(songLyrics);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // print(downloadedSongsList);
-    List<SongLyrics> downloadedSongsList = [
-      SongLyrics(
-        id: 1,
-        title: "Pantropiko",
-        artist: "BINI",
-        lyrics: 'bini pantropiko',
-      ),
-      SongLyrics(
-        id: 2,
-        title: "Hypotheticals",
-        artist: "Lake Street Dive",
-        lyrics: 'hypotheticals',
-      ),
-      SongLyrics(
-        id: 3,
-        title: "Salamin, Salamin",
-        artist: "BINI",
-        lyrics: 'bini salamin',
-      ),
-      SongLyrics(
-        id: 4,
-        title: "Orasa",
-        artist: "Dilaw",
-        lyrics: 'orasa dilaw',
-      ),
-      SongLyrics(
-        id: 5,
-        title: "Ignorance",
-        artist: "Paramore",
-        lyrics: 'Paramore lyrics ignorance',
-      ),
-      SongLyrics(
-        id: 6,
-        title: "When I Met You",
-        artist: "APO Hiking Society",
-        lyrics: 'there i was',
-      ),
-    ];
 
     return downloadedSongsList.isNotEmpty
         ? Column(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:galano_final_project/components/setlist_empty.dart';
-import 'package:galano_final_project/models/lyrics.dart';
+import 'package:galano_final_project/data/hive_boxes.dart';
 import 'package:galano_final_project/models/setlist.dart';
 import 'package:galano_final_project/screens/view_setlist.dart';
 import 'package:gap/gap.dart';
@@ -15,14 +15,24 @@ class SetlistScreen extends StatefulWidget {
 class _SetlistScreenState extends State<SetlistScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  List<Setlist> setlist = [
-    Setlist(id: 1, name: "San Juan Gig", date: "Unknown date", songs: [
-      SongLyrics(id: 1, title: 'Pantropiko', artist: 'BINI', lyrics: 'lyrics bini pantropiko'),
-      SongLyrics(id: 2, title: 'Hypotheticals', artist: 'Lake Street Dive', lyrics: 'lyrics hypo'),
-    ]),
-    // Setlist(id: 2, name: "Hometown Fiesta 2024", date: "05-16-2024"),
-    // Setlist(id: 3, name: "Araneta Concert", date: "05-17-2024"),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // setlistBox.clear();
+    fetchData();
+  }
+
+  List<Setlist> setlist = [];
+
+  Future<void> fetchData() async {
+    setlist.clear();
+    for (int i = 0; i < setlistBox.length; i++) {
+      Setlist item = setlistBox.getAt(i) as Setlist;
+      setState(() {
+        setlist.add(item);
+      });
+    }
+  }
 
   Future<void> showNewSetlistDialog(BuildContext context) async {
     return await showDialog(
@@ -83,12 +93,30 @@ class _SetlistScreenState extends State<SetlistScreen> {
                     date = dateCon.text;
                   }
                   setState(() {
-                    setlist.add(Setlist(
+                    setlist.add(
+                      Setlist(
                         id: setlist.length + 1,
                         name: nameCon.text,
-                        date: date));
+                        date: date,
+                        songs: [],
+                      ),
+                    );
                   });
+                  setlistBox.put(
+                    setlist.length,
+                    Setlist(
+                      id: setlist.length,
+                      name: nameCon.text,
+                      date: date,
+                      songs: [],
+                    ),
+                  );
+                  print(setlist.length);
                   Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text("Setlist (${nameCon.text}) has been created.")));
+                  fetchData();
                 }
               },
               child: const Text(
@@ -132,7 +160,7 @@ class _SetlistScreenState extends State<SetlistScreen> {
                               borderRadius: BorderRadius.circular(100),
                             ),
                             suffixIcon: Padding(
-                              padding: EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.only(right: 10),
                               child: IconButton(
                                   onPressed: () {},
                                   icon: const Icon(Icons.search)),

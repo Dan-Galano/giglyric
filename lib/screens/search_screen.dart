@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:galano_final_project/data/hive_boxes.dart';
 import 'package:galano_final_project/models/lyrics.dart';
 import 'package:galano_final_project/models/setlist.dart';
 import 'package:galano_final_project/models/song.dart';
@@ -19,29 +20,19 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   TextEditingController searchLyric = TextEditingController();
 
-  List<Setlist> setlist = [
-    Setlist(id: 1, name: "San Juan Gig", date: "Unknown date", songs: [
-      SongLyrics(
-          id: 1,
-          title: 'Pantropiko',
-          artist: 'BINI',
-          lyrics: 'lyrics bini pantropiko'),
-      SongLyrics(
-          id: 2,
-          title: 'Hypotheticals',
-          artist: 'Lake Street Dive',
-          lyrics: 'lyrics hypo'),
-    ]),
-    Setlist(id: 2, name: "Hometown Fiesta 2024", date: "05-16-2024"),
-    Setlist(id: 2, name: "Hometown Fiesta 2024", date: "05-16-2024"),
-    Setlist(id: 3, name: "Araneta Concert", date: "05-17-2024"),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchLyrics(); //fetch all lyrics to check if user already downloaded the song's lyrics
+    fetchSetlist();
+    print("SETLIST SIZE: ${setlist.length}");
+    // setlistBox.clear();
+  }
+
+  List<Setlist> setlist = []; //to add sa setlist
 
   static List<Song> songList = [
-    Song(
-        songId: 135062,
-        title: "Ignorance akjsdh kjasj d ajkshdhd j",
-        artist: "Paramore"),
+    Song(songId: 135062, title: "Ignorance", artist: "Paramore"),
   ];
 
   int prevSongId = 0;
@@ -49,7 +40,19 @@ class _SearchScreenState extends State<SearchScreen> {
   late SongLyrics song;
   int numberOfResults = songList.length;
 
+  List<SongLyrics> dlLyrics = [];
+
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  Future<void> fetchSetlist() async {
+    setlist.clear();
+    for (int i = 0; i < setlistBox.length; i++) {
+      Setlist setlistData = setlistBox.getAt(i) as Setlist;
+      setState(() {
+        setlist.add(setlistData);
+      });
+    }
+  }
 
   Map<String, String> headers = {
     'X-RapidAPI-Key': '57f1fbaf59mshbefe6f1c5f28d6fp12ddd7jsnedb955315929',
@@ -104,7 +107,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  //3480619
   Future<void> getLyrics(BuildContext context, int songId) async {
     if (songId == prevSongId) {
       //para di na maulit yung req
@@ -149,15 +151,14 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  //dummyListHive
-  List<SongLyrics> dlLyrics = [
-    SongLyrics(
-      id: 01,
-      title: "sample title",
-      artist: "sample artist",
-      lyrics: "sample lyrics",
-    ),
-  ];
+  Future<void> fetchLyrics() async {
+    for (int i = 0; i < lyricsBox.length; i++) {
+      SongLyrics songLyrics = lyricsBox.getAt(i) as SongLyrics;
+      setState(() {
+        dlLyrics.add(songLyrics);
+      });
+    }
+  }
 
   Future<void> downloadLyrics(int songId) async {
     for (var song in dlLyrics) {
@@ -172,6 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
     //Get song lyrics
     final responseLyrics =
         await http.get(Uri.parse(lyricsUrl), headers: headers);
+
     if (responseLyrics.statusCode == 200) {
       print("+1 request (download song)");
       final jsonData = jsonDecode(responseLyrics.body);
@@ -180,7 +182,8 @@ class _SearchScreenState extends State<SearchScreen> {
         //convert html to text
         String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
         document = parse(htmlData.replaceAll('<br>', '\n'));
-        dlLyrics.add(
+        lyricsBox.put(
+          songId,
           SongLyrics(
             id: songId,
             title: jsonData['lyrics']['tracking_data']['title'],
@@ -189,14 +192,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         );
       });
-      print(dlLyrics.contains(
-        SongLyrics(
-          id: songId,
-          title: jsonData['lyrics']['tracking_data']['title'],
-          artist: jsonData['lyrics']['tracking_data']['primary_artist'],
-          lyrics: document.body!.text,
-        ),
-      ));
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text("Lyrics downloaded")));
       print(dlLyrics.length);
@@ -227,7 +222,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ListTile(
                   onTap: () {
                     Navigator.of(context).pop();
-                    showAddToSetlistBottomSheet(context);
+                    showAddToSetlistBottomSheet(context, songId);
                   },
                   leading: const Icon(Icons.add),
                   title: const Text("Add to setlist"),
@@ -240,7 +235,39 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Future<void> showAddToSetlistBottomSheet(BuildContext context) async {
+  void addSongInSetlist(int index, int songId) {
+    // print("INDEX: $index");
+    // print("SIZE OF SETLIST: ${setlist.length}");
+    // print("NAME OF NEW SETLIST: ${setlist[index].name}");
+    for (var e in setlist[index].songs) {
+      if (e.id == songId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Song has already been added.")));
+        return;
+      }
+    }
+    setState(() {
+      setlist[index].songs.insert(
+            setlist[index].songs.length,
+            SongLyrics(
+                id: songId,
+                title: "Tadhana",
+                artist: "Up Dharma Down",
+                lyrics: "Kung di papatulan"),
+          );
+    });
+    print("INDEX: $index");
+
+    setlistBox.put(index + 1, setlist[index]);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Saved to (${setlist[index].name})"),
+      ),
+    );
+  }
+
+  Future<void> showAddToSetlistBottomSheet(
+      BuildContext context, int songId) async {
     return showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -266,23 +293,40 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: setlist.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content:
-                                  Text("Saved to (${setlist[index].name})")));
-                          Navigator.of(context).pop();
-                        },
-                        title: Text(setlist[index].name),
-                        subtitle: Text(setlist[index].date),
-                      );
-                    },
-                  ),
-                ),
+                setlist.isEmpty
+                    ? const Expanded(
+                        child: Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Your setlist is empty.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : Expanded(
+                        child: ListView.builder(
+                          itemCount: setlist.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              onTap: () {
+                                addSongInSetlist(index, songId);
+                                Navigator.of(context).pop();
+                              },
+                              title: Text(setlist[index].name),
+                              subtitle: Text(setlist[index].date),
+                            );
+                          },
+                        ),
+                      ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: FloatingActionButton.extended(
@@ -363,13 +407,30 @@ class _SearchScreenState extends State<SearchScreen> {
                     date = dateCon.text;
                   }
                   setState(() {
-                    setlist.add(Setlist(
-                        id: setlist.length + 1,
+                    setlist.add(
+                      Setlist(
+                        id: setlist.length,
                         name: nameCon.text,
-                        date: date));
+                        date: date,
+                        songs: [],
+                      ),
+                    );
                   });
-                  print(setlist.length);
+                  setlistBox.put(
+                    setlist.length,
+                    Setlist(
+                      id: setlist.length,
+                      name: nameCon.text,
+                      date: date,
+                      songs: [],
+                    ),
+                  );
+                  print("SETLIST SIZE AFTER CREATE: ${setlist.length}");
                   Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text("Setlist (${nameCon.text}) has been created.")));
+                  fetchSetlist();
                 }
               },
               child: const Text(
