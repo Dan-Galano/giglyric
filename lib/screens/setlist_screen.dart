@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:galano_final_project/components/setlist_empty.dart';
 import 'package:galano_final_project/models/lyrics.dart';
 import 'package:galano_final_project/models/setlist.dart';
-import 'package:galano_final_project/models/song.dart';
 import 'package:galano_final_project/screens/view_setlist.dart';
 import 'package:gap/gap.dart';
 

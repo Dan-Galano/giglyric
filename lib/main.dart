@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:galano_final_project/screens/homepage.dart';
-import 'package:galano_final_project/screens/splash_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {

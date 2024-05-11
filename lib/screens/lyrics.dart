@@ -5,7 +5,7 @@ import 'package:gap/gap.dart';
 class LyricsScreen extends StatelessWidget {
   LyricsScreen({super.key, required this.songLyrics});
 
-  SongLyrics songLyrics;
+  final SongLyrics songLyrics;
 
   @override
   Widget build(BuildContext context) {

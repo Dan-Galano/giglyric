@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:galano_final_project/components/home_empty.dart';
 import 'package:galano_final_project/models/lyrics.dart';
-import 'package:galano_final_project/models/song.dart';
 import 'package:galano_final_project/screens/lyrics.dart';
 import 'package:gap/gap.dart';
 

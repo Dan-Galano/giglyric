@@ -1,9 +1,7 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:galano_final_project/models/setlist.dart';
 import 'package:galano_final_project/screens/homepage.dart';
 import 'package:galano_final_project/screens/lyrics.dart';
-import 'package:galano_final_project/screens/search_screen.dart';
 import 'package:gap/gap.dart';
 
 class ViewSetlistScreen extends StatefulWidget {
