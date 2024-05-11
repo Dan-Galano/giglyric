@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:galano_final_project/components/setlist_empty.dart';
+import 'package:galano_final_project/models/lyrics.dart';
 import 'package:galano_final_project/models/setlist.dart';
 import 'package:galano_final_project/models/song.dart';
 import 'package:galano_final_project/screens/view_setlist.dart';
@@ -17,8 +18,8 @@ class _SetlistScreenState extends State<SetlistScreen> {
 
   List<Setlist> setlist = [
     Setlist(id: 1, name: "San Juan Gig", date: "Unknown date", songs: [
-      Song(songId: 1, title: 'Pantropiko', artist: 'BINI'),
-      Song(songId: 2, title: 'Hypotheticals', artist: 'Lake Street Dive'),
+      SongLyrics(id: 1, title: 'Pantropiko', artist: 'BINI', lyrics: 'lyrics bini pantropiko'),
+      SongLyrics(id: 2, title: 'Hypotheticals', artist: 'Lake Street Dive', lyrics: 'lyrics hypo'),
     ]),
     // Setlist(id: 2, name: "Hometown Fiesta 2024", date: "05-16-2024"),
     // Setlist(id: 3, name: "Araneta Concert", date: "05-17-2024"),

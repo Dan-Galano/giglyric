@@ -1,8 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:galano_final_project/models/lyrics.dart';
+import 'package:galano_final_project/models/setlist.dart';
 import 'package:galano_final_project/models/song.dart';
+import 'package:galano_final_project/screens/lyrics.dart';
 import 'package:gap/gap.dart';
+import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 
 class SearchScreen extends StatefulWidget {
@@ -14,17 +18,45 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   TextEditingController searchLyric = TextEditingController();
-  static List<Song> songList = [
-    Song(songId: 12345, title: "Fallen", artist: "Lola Amour"),
+
+  List<Setlist> setlist = [
+    Setlist(id: 1, name: "San Juan Gig", date: "Unknown date", songs: [
+      SongLyrics(
+          id: 1,
+          title: 'Pantropiko',
+          artist: 'BINI',
+          lyrics: 'lyrics bini pantropiko'),
+      SongLyrics(
+          id: 2,
+          title: 'Hypotheticals',
+          artist: 'Lake Street Dive',
+          lyrics: 'lyrics hypo'),
+    ]),
+    Setlist(id: 2, name: "Hometown Fiesta 2024", date: "05-16-2024"),
+    Setlist(id: 2, name: "Hometown Fiesta 2024", date: "05-16-2024"),
+    Setlist(id: 3, name: "Araneta Concert", date: "05-17-2024"),
   ];
+
+  static List<Song> songList = [
+    Song(
+        songId: 135062,
+        title: "Ignorance akjsdh kjasj d ajkshdhd j",
+        artist: "Paramore"),
+  ];
+
+  int prevSongId = 0;
+  String songLyricsText = "";
+  late SongLyrics song;
   int numberOfResults = songList.length;
+
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   Map<String, String> headers = {
     'X-RapidAPI-Key': '57f1fbaf59mshbefe6f1c5f28d6fp12ddd7jsnedb955315929',
     'X-RapidAPI-Host': 'genius-song-lyrics1.p.rapidapi.com',
   };
 
-  void searchSong(String input) async {
+  Future<void> searchSong(String input) async {
     // print("test");
     songList.clear();
     if (searchLyric.text.isEmpty || searchLyric.text == "") {
@@ -40,6 +72,7 @@ class _SearchScreenState extends State<SearchScreen> {
       final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
+        print("+1 request");
         final jsonData = jsonDecode(response.body);
         List<dynamic> hits = jsonData['hits'];
         print("NUMBER OF ITEMS (HITS): ");
@@ -71,21 +104,283 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  void getLyrics(int songId) async {
-    //url for getting the lyrics
+  //3480619
+  Future<void> getLyrics(BuildContext context, int songId) async {
+    if (songId == prevSongId) {
+      //para di na maulit yung req
+      // print(prevSongId);
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => LyricsScreen(songLyrics: song),
+      ));
+    } else {
+      //url for getting the lyrics
+      String lyricsUrl =
+          'https://genius-song-lyrics1.p.rapidapi.com/song/lyrics/?id=$songId';
+      //Get song lyrics
+      final responseLyrics =
+          await http.get(Uri.parse(lyricsUrl), headers: headers);
+
+      if (responseLyrics.statusCode == 200) {
+        print("+1 request");
+        final jsonData = jsonDecode(responseLyrics.body);
+        print("LYRICS!!!!");
+        setState(() {
+          prevSongId = jsonData['lyrics']['tracking_data']['song_id'];
+
+          //convert html to text
+          String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
+          var document = parse(htmlData.replaceAll('<br>', '\n'));
+          songLyricsText = document.body!.text;
+
+          song = SongLyrics(
+            id: songId,
+            title: jsonData['lyrics']['tracking_data']['title'],
+            artist: jsonData['lyrics']['tracking_data']['primary_artist'],
+            lyrics: songLyricsText,
+          );
+        });
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => LyricsScreen(songLyrics: song),
+        ));
+      } else {
+        print(
+            'Request to get lyrics failed with status: ${responseLyrics.statusCode}');
+      }
+    }
+  }
+
+  //dummyListHive
+  List<SongLyrics> dlLyrics = [
+    SongLyrics(
+      id: 01,
+      title: "sample title",
+      artist: "sample artist",
+      lyrics: "sample lyrics",
+    ),
+  ];
+
+  Future<void> downloadLyrics(int songId) async {
+    for (var song in dlLyrics) {
+      if (song.id == songId) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("This song has already been downloaded.")));
+        return;
+      }
+    }
     String lyricsUrl =
         'https://genius-song-lyrics1.p.rapidapi.com/song/lyrics/?id=$songId';
     //Get song lyrics
     final responseLyrics =
         await http.get(Uri.parse(lyricsUrl), headers: headers);
-
     if (responseLyrics.statusCode == 200) {
+      print("+1 request (download song)");
       final jsonData = jsonDecode(responseLyrics.body);
-      print("LYRICS!!!!");
+      var document;
+      setState(() {
+        //convert html to text
+        String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
+        document = parse(htmlData.replaceAll('<br>', '\n'));
+        dlLyrics.add(
+          SongLyrics(
+            id: songId,
+            title: jsonData['lyrics']['tracking_data']['title'],
+            artist: jsonData['lyrics']['tracking_data']['primary_artist'],
+            lyrics: document.body!.text,
+          ),
+        );
+      });
+      print(dlLyrics.contains(
+        SongLyrics(
+          id: songId,
+          title: jsonData['lyrics']['tracking_data']['title'],
+          artist: jsonData['lyrics']['tracking_data']['primary_artist'],
+          lyrics: document.body!.text,
+        ),
+      ));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Lyrics downloaded")));
+      print(dlLyrics.length);
     } else {
-      print(
-          'Request to get lyrics failed with status: ${responseLyrics.statusCode}');
+      print("Request failed with status: ${responseLyrics.statusCode}");
     }
+  }
+
+  Future<void> showOptionBottomSheet(BuildContext context, int songId) async {
+    return await showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.3,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                ListTile(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    downloadLyrics(songId);
+                  },
+                  leading: const Icon(Icons.download),
+                  title: const Text("Download Song"),
+                ),
+                const Divider(),
+                ListTile(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    showAddToSetlistBottomSheet(context);
+                  },
+                  leading: const Icon(Icons.add),
+                  title: const Text("Add to setlist"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> showAddToSetlistBottomSheet(BuildContext context) async {
+    return showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Add to Setlist",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: setlist.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content:
+                                  Text("Saved to (${setlist[index].name})")));
+                          Navigator.of(context).pop();
+                        },
+                        title: Text(setlist[index].name),
+                        subtitle: Text(setlist[index].date),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: FloatingActionButton.extended(
+                    backgroundColor: const Color(0xff2B2B2B),
+                    foregroundColor: Colors.white,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      showNewSetlistDialog(context);
+                    },
+                    label: const Text("New Setlist"),
+                    icon: const Icon(Icons.add),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> showNewSetlistDialog(BuildContext context) async {
+    return await showDialog(
+      context: context,
+      builder: (context) {
+        final TextEditingController nameCon = TextEditingController();
+        final TextEditingController dateCon = TextEditingController();
+        return AlertDialog(
+          title: const Text(
+            'New setlist',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Required field.";
+                    }
+                    return null;
+                  },
+                  controller: nameCon,
+                  decoration: const InputDecoration(
+                    hintText: 'Name',
+                  ),
+                ),
+                TextField(
+                  controller: dateCon,
+                  decoration: const InputDecoration(
+                    hintText: 'Date',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                nameCon.clear();
+                dateCon.clear();
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xffa6a6a6), fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  String date;
+                  if (dateCon.text.isEmpty || dateCon.text == "") {
+                    date = "Unknown date";
+                  } else {
+                    date = dateCon.text;
+                  }
+                  setState(() {
+                    setlist.add(Setlist(
+                        id: setlist.length + 1,
+                        name: nameCon.text,
+                        date: date));
+                  });
+                  print(setlist.length);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text(
+                'Create',
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
 //bakbakan na
@@ -140,12 +435,19 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Card(
                     color: const Color(0xffE8E8E8),
                     child: ListTile(
-                      onTap: () => getLyrics(songList[index].songId),
+                      onTap: () => getLyrics(context, songList[index].songId),
                       title: Text(
                         songList[index].title,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(songList[index].artist),
+                      trailing: IconButton(
+                        onPressed: () {
+                          showOptionBottomSheet(
+                              context, songList[index].songId);
+                        },
+                        icon: const Icon(Icons.more_horiz),
+                      ),
                     ),
                   ),
                 );

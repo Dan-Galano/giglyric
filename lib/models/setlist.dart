@@ -1,10 +1,11 @@
+import 'package:galano_final_project/models/lyrics.dart';
 import 'package:galano_final_project/models/song.dart';
 
 class Setlist {
   int id;
   String name;
   String date;
-  List<Song> songs;
+  List<SongLyrics> songs;
 
   Setlist({
     required this.id,

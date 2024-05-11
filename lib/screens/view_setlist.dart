@@ -107,7 +107,9 @@ class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
                       child: ListTile(
                         onTap: () {
                           Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => LyricsScreen(),
+                            builder: (context) => LyricsScreen(
+                              songLyrics: widget.setlist.songs[index],
+                            ),
                           ));
                         },
                         title: Text(
