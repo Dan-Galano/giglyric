@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:galano_final_project/data/hive_boxes.dart';
+import 'package:galano_final_project/models/lyrics.dart';
 import 'package:galano_final_project/models/setlist.dart';
 import 'package:galano_final_project/screens/homepage.dart';
 import 'package:galano_final_project/screens/lyrics.dart';
 import 'package:gap/gap.dart';
 
 class ViewSetlistScreen extends StatefulWidget {
-  ViewSetlistScreen({super.key, required this.setlist});
+  ViewSetlistScreen({super.key, required this.setlistIndex});
 
-  final Setlist setlist;
+  final int setlistIndex;
 
   @override
   State<ViewSetlistScreen> createState() => _ViewSetlistScreenState();
@@ -15,6 +17,72 @@ class ViewSetlistScreen extends StatefulWidget {
 
 class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSetlist(widget.setlistIndex);
+  }
+
+  List<SongLyrics> songs = [];
+  late Setlist setlist;
+
+  void fetchSetlist(index) {
+    songs.clear();
+    setState(() {
+      setlist = setlistBox.getAt(index) as Setlist;
+      for (var song in setlist.songs) {
+        songs.add(song);
+      }
+    });
+  }
+
+  Future<void> showConfirmDeleteDialog(int index, String songName) async {
+    return await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete?"),
+          content: const Text("Are you sure you want to delete this?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                removeSongFromSetlist(index);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Song ($songName) has been deleted."),
+                  ),
+                );
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Color(0xffa6a6a6), fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void removeSongFromSetlist(int index) {
+    setState(() {
+      songs.removeAt(index);
+      setlist.songs = songs;
+    });
+    setlistBox.put(widget.setlistIndex + 1, setlist);
+    // fetchSetlist(widget)
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +135,7 @@ class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
                   left: MediaQuery.of(context).size.width * 0.075),
               scrollDirection: Axis.horizontal,
               child: Text(
-                widget.setlist.name,
+                setlist.name,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 36,
@@ -96,7 +164,7 @@ class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: widget.setlist.songs.length,
+                itemCount: songs.length,
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -106,15 +174,22 @@ class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
                         onTap: () {
                           Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) => LyricsScreen(
-                              songLyrics: widget.setlist.songs[index],
+                              songLyrics: songs[index],
                             ),
                           ));
                         },
                         title: Text(
-                          widget.setlist.songs[index].title,
+                          songs[index].title,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        subtitle: Text(widget.setlist.songs[index].artist),
+                        subtitle: Text(songs[index].artist),
+                        trailing: IconButton(
+                          onPressed: () {
+                            showConfirmDeleteDialog(index, songs[index].title);
+                            print(index);
+                          },
+                          icon: const Icon(Icons.close),
+                        ),
                       ),
                     ),
                   );

@@ -17,7 +17,7 @@ class _HomePageState extends State<HomePage> {
 
   List screens = [
     HomeScreen(),
-    SetlistScreen(),
+    const SetlistScreen(),
     SearchScreen(),
   ];
 
@@ -49,12 +49,12 @@ class _HomePageState extends State<HomePage> {
           currentIndex: currentIndex,
           items: const [
             BottomNavigationBarItem(
-              label: "Home",
-              icon: Icon(Icons.home),
+              label: "Lyrics",
+              icon: Icon(Icons.lyrics_outlined),
             ),
             BottomNavigationBarItem(
               label: "Setlist",
-              icon: Icon(Icons.queue_music),
+              icon: Icon(Icons.list_alt_rounded),
             ),
             BottomNavigationBarItem(
               label: "Search Online",

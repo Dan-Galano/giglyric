@@ -44,6 +44,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  Map<String, String> headers = {
+    'X-RapidAPI-Key': '57f1fbaf59mshbefe6f1c5f28d6fp12ddd7jsnedb955315929',
+    'X-RapidAPI-Host': 'genius-song-lyrics1.p.rapidapi.com',
+  };
+
   Future<void> fetchSetlist() async {
     setlist.clear();
     for (int i = 0; i < setlistBox.length; i++) {
@@ -53,11 +58,6 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
   }
-
-  Map<String, String> headers = {
-    'X-RapidAPI-Key': '57f1fbaf59mshbefe6f1c5f28d6fp12ddd7jsnedb955315929',
-    'X-RapidAPI-Host': 'genius-song-lyrics1.p.rapidapi.com',
-  };
 
   Future<void> searchSong(String input) async {
     // print("test");
@@ -235,10 +235,8 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  void addSongInSetlist(int index, int songId) {
-    // print("INDEX: $index");
-    // print("SIZE OF SETLIST: ${setlist.length}");
-    // print("NAME OF NEW SETLIST: ${setlist[index].name}");
+  Future<void> addSongInSetlist(int index, int songId) async {
+    print("SONG ID (ADD TO SETLIST): $songId");
     for (var e in setlist[index].songs) {
       if (e.id == songId) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -246,24 +244,43 @@ class _SearchScreenState extends State<SearchScreen> {
         return;
       }
     }
-    setState(() {
-      setlist[index].songs.insert(
-            setlist[index].songs.length,
-            SongLyrics(
-                id: songId,
-                title: "Tadhana",
-                artist: "Up Dharma Down",
-                lyrics: "Kung di papatulan"),
-          );
-    });
-    print("INDEX: $index");
 
-    setlistBox.put(index + 1, setlist[index]);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Saved to (${setlist[index].name})"),
-      ),
-    );
+    String lyricsUrl =
+        'https://genius-song-lyrics1.p.rapidapi.com/song/lyrics/?id=$songId';
+    //Get song lyrics
+    final responseLyrics =
+        await http.get(Uri.parse(lyricsUrl), headers: headers);
+
+    if (responseLyrics.statusCode == 200) {
+      print("+1 request (download song)");
+      final jsonData = jsonDecode(responseLyrics.body);
+      var document;
+
+      setState(() {
+        //convert html to text
+        String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
+        document = parse(htmlData.replaceAll('<br>', '\n'));
+
+        setlist[index].songs.insert(
+              setlist[index].songs.length,
+              SongLyrics(
+                id: songId,
+                title: jsonData['lyrics']['tracking_data']['title'],
+                artist: jsonData['lyrics']['tracking_data']['primary_artist'],
+                lyrics: document.body!.text,
+              ),
+            );
+      });
+      setlistBox.put(index + 1, setlist[index]);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Saved to (${setlist[index].name})"),
+        ),
+      );
+      downloadLyrics(songId); //add to downloads na rin
+    } else {
+      print("Request failed with status: ${responseLyrics.statusCode}");
+    }
   }
 
   Future<void> showAddToSetlistBottomSheet(

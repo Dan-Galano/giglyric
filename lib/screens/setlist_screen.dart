@@ -24,7 +24,7 @@ class _SetlistScreenState extends State<SetlistScreen> {
 
   List<Setlist> setlist = [];
 
-  Future<void> fetchData() async {
+  void fetchData() {
     setlist.clear();
     for (int i = 0; i < setlistBox.length; i++) {
       Setlist item = setlistBox.getAt(i) as Setlist;
@@ -130,10 +130,182 @@ class _SetlistScreenState extends State<SetlistScreen> {
     );
   }
 
-  void viewSetlist(BuildContext context, Setlist setlist) {
+  void viewSetlist(BuildContext context, int index) {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => ViewSetlistScreen(setlist: setlist),
+      builder: (context) => ViewSetlistScreen(
+        setlistIndex: index,
+      ),
     ));
+  }
+
+  Future<void> showConfirmDeleteDialog(int index, String setlistName) async {
+    return await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete?"),
+          content: const Text("Are you sure you want to delete this?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                deleteSetlist(index);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Setlist ($setlistName) has been deleted."),
+                  ),
+                );
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Color(0xffa6a6a6), fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void deleteSetlist(int index) {
+    setlistBox.deleteAt(index);
+    setState(() {
+      fetchData();
+    });
+  }
+
+  Future<void> showEditSetlistDialog(BuildContext context, int index) async {
+    return await showDialog(
+      context: context,
+      builder: (context) {
+        final TextEditingController nameCon = TextEditingController();
+        final TextEditingController dateCon = TextEditingController();
+
+        nameCon.text = setlist[index].name;
+        if (setlist[index].date != "Unknown date") {
+          dateCon.text = setlist[index].date;
+        }
+
+        return AlertDialog(
+          title: const Text(
+            'New setlist',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Required field.";
+                    }
+                    return null;
+                  },
+                  controller: nameCon,
+                  decoration: const InputDecoration(
+                    hintText: 'Name',
+                  ),
+                ),
+                TextField(
+                  controller: dateCon,
+                  decoration: const InputDecoration(
+                    hintText: 'Date',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                nameCon.clear();
+                dateCon.clear();
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xffa6a6a6), fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  String date;
+                  if (dateCon.text.isEmpty || dateCon.text == "") {
+                    date = "Unknown date";
+                  } else {
+                    date = dateCon.text;
+                  }
+                  editSetlist(index, nameCon.text, date);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text(
+                'Save',
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void editSetlist(int index, String name, String date) {
+    setState(() {
+      setlist[index].name = name;
+      setlist[index].date = date;
+    });
+    setlistBox.put(index, setlist[index]);
+    fetchData();
+  }
+
+  Future<void> showOptionBottomSheet(BuildContext context, int index) async {
+    print(index);
+    return await showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.3,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                ListTile(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    showEditSetlistDialog(context, index);
+                  },
+                  leading: const Icon(Icons.edit_outlined),
+                  title: const Text("Edit setlist"),
+                ),
+                const Divider(),
+                ListTile(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    // showAddToSetlistBottomSheet(context, songId);
+                    showConfirmDeleteDialog(index, setlist[index].name);
+                  },
+                  leading: const Icon(Icons.delete_outline),
+                  title: const Text("Delete setlist"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -189,9 +361,9 @@ class _SetlistScreenState extends State<SetlistScreen> {
               ),
               const Gap(12),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Card(
-                  color: Color(0xfff4f4f4),
+                  color: const Color(0xfff4f4f4),
                   child: ListTile(
                     onTap: () async => showNewSetlistDialog(context),
                     leading: const Icon(Icons.add),
@@ -212,13 +384,21 @@ class _SetlistScreenState extends State<SetlistScreen> {
                         color: const Color(0xffE8E8E8),
                         child: ListTile(
                           onTap: () {
-                            viewSetlist(context, setlist[index]);
+                            viewSetlist(context, index);
                           },
                           title: Text(
                             setlist[index].name,
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(setlist[index].date),
+                          trailing: IconButton(
+                            onPressed: () {
+                              // showConfirmDeleteDialog(
+                              //     index, setlist[index].name);
+                              showOptionBottomSheet(context, index);
+                            },
+                            icon: const Icon(Icons.more_horiz),
+                          ),
                         ),
                       ),
                     );
@@ -249,7 +429,7 @@ class _SetlistScreenState extends State<SetlistScreen> {
                                 borderRadius: BorderRadius.circular(100),
                               ),
                               suffixIcon: Padding(
-                                padding: EdgeInsets.only(right: 10),
+                                padding: const EdgeInsets.only(right: 10),
                                 child: IconButton(
                                     onPressed: () {},
                                     icon: const Icon(Icons.search)),

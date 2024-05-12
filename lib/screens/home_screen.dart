@@ -22,12 +22,63 @@ class _HomeScreenState extends State<HomeScreen> {
   List<SongLyrics> downloadedSongsList = [];
 
   Future<void> fetchLyrics() async {
+    downloadedSongsList.clear();
     for (int i = 0; i < lyricsBox.length; i++) {
       SongLyrics songLyrics = lyricsBox.getAt(i) as SongLyrics;
       setState(() {
         downloadedSongsList.add(songLyrics);
       });
     }
+  }
+
+  Future<void> showConfirmDeleteDialog(int index, SongLyrics song) async {
+    return await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete?"),
+          content: const Text("Are you sure you want to delete this?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                deleteSong(index);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Setlist (${song.title}) has been deleted."),
+                  ),
+                );
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Color(0xffa6a6a6), fontSize: 16),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  //BACKLOGS:
+  //1 Dapat madelete din setlist - DONE
+  //2 Searching
+  //3 Remove song from setlist - DONE
+  //4 on lyrics screen, show download button - Wag na ito
+
+  void deleteSong(int index) {
+    // lyricsBox.deleteAt(index);
+    
+    fetchLyrics();
   }
 
   @override
@@ -37,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return downloadedSongsList.isNotEmpty
         ? Column(
             children: [
-              //serach bar
+              //search bar
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Row(
@@ -56,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(100),
                             ),
                             suffixIcon: Padding(
-                              padding: EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.only(right: 10),
                               child: IconButton(
                                   onPressed: () {},
                                   icon: const Icon(Icons.search)),
@@ -106,6 +157,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(downloadedSongsList[index].artist),
+                          trailing: IconButton(
+                            onPressed: () {
+                              showConfirmDeleteDialog(
+                                  index, downloadedSongsList[index]);
+                              print(index);
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
                         ),
                       ),
                     );
@@ -136,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(100),
                               ),
                               suffixIcon: Padding(
-                                padding: EdgeInsets.only(right: 10),
+                                padding: const EdgeInsets.only(right: 10),
                                 child: IconButton(
                                     onPressed: () {},
                                     icon: const Icon(Icons.search)),
