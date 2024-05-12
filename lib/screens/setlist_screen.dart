@@ -14,15 +14,25 @@ class SetlistScreen extends StatefulWidget {
 
 class _SetlistScreenState extends State<SetlistScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  List<Setlist> setlist = [];
+  List<Setlist> filteredSetlist = [];
 
   @override
   void initState() {
     super.initState();
-    // setlistBox.clear();
     fetchData();
+    // setlistBox.clear();
   }
 
-  List<Setlist> setlist = [];
+  void filterSetlist(String query) {
+    setState(() {
+      filteredSetlist = setlist
+          .where((setlist) =>
+              setlist.name.toLowerCase().contains(query.toLowerCase()) ||
+              setlist.date.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
 
   void fetchData() {
     setlist.clear();
@@ -30,6 +40,7 @@ class _SetlistScreenState extends State<SetlistScreen> {
       Setlist item = setlistBox.getAt(i) as Setlist;
       setState(() {
         setlist.add(item);
+        filteredSetlist = List.from(setlist);
       });
     }
   }
@@ -92,18 +103,7 @@ class _SetlistScreenState extends State<SetlistScreen> {
                   } else {
                     date = dateCon.text;
                   }
-                  setState(() {
-                    setlist.add(
-                      Setlist(
-                        id: setlist.length + 1,
-                        name: nameCon.text,
-                        date: date,
-                        songs: [],
-                      ),
-                    );
-                  });
-                  setlistBox.put(
-                    setlist.length,
+                  setlistBox.add(
                     Setlist(
                       id: setlist.length,
                       name: nameCon.text,
@@ -111,12 +111,15 @@ class _SetlistScreenState extends State<SetlistScreen> {
                       songs: [],
                     ),
                   );
+                  setState(() {
+                    setlist.clear();
+                    fetchData();
+                  });
                   print(setlist.length);
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content:
                           Text("Setlist (${nameCon.text}) has been created.")));
-                  fetchData();
                 }
               },
               child: const Text(
@@ -157,7 +160,9 @@ class _SetlistScreenState extends State<SetlistScreen> {
             ),
             TextButton(
               onPressed: () {
-                deleteSetlist(index);
+                setState(() {
+                  deleteSetlist(index);
+                });
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -179,8 +184,10 @@ class _SetlistScreenState extends State<SetlistScreen> {
   void deleteSetlist(int index) {
     setlistBox.deleteAt(index);
     setState(() {
+      setlist.clear();
       fetchData();
     });
+    print("NEW SETLIST SIZE: ${setlist.length}");
   }
 
   Future<void> showEditSetlistDialog(BuildContext context, int index) async {
@@ -247,7 +254,9 @@ class _SetlistScreenState extends State<SetlistScreen> {
                   } else {
                     date = dateCon.text;
                   }
-                  editSetlist(index, nameCon.text, date);
+                  setState(() {
+                    editSetlist(index, nameCon.text, date);
+                  });
                   Navigator.of(context).pop();
                 }
               },
@@ -262,12 +271,16 @@ class _SetlistScreenState extends State<SetlistScreen> {
     );
   }
 
-  void editSetlist(int index, String name, String date) {
+
+  Future<void> editSetlist(int index, String name, String date) async {
     setState(() {
       setlist[index].name = name;
       setlist[index].date = date;
     });
-    setlistBox.put(index, setlist[index]);
+    await setlistBox.clear();
+    for (var item in setlist) {
+      await setlistBox.add(item);
+    }
     fetchData();
   }
 
@@ -324,6 +337,9 @@ class _SetlistScreenState extends State<SetlistScreen> {
                       width: MediaQuery.of(context).size.width * 0.85,
                       child: TextField(
                         textAlignVertical: TextAlignVertical.center,
+                        onChanged: (value) {
+                          filterSetlist(value);
+                        },
                         decoration: InputDecoration(
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 20),
@@ -376,7 +392,7 @@ class _SetlistScreenState extends State<SetlistScreen> {
               ),
               Expanded(
                 child: ListView.builder(
-                  itemCount: setlist.length,
+                  itemCount: filteredSetlist.length,
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -387,14 +403,14 @@ class _SetlistScreenState extends State<SetlistScreen> {
                             viewSetlist(context, index);
                           },
                           title: Text(
-                            setlist[index].name,
+                            filteredSetlist[index].name,
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          subtitle: Text(setlist[index].date),
+                          subtitle: Text(filteredSetlist[index].date),
                           trailing: IconButton(
                             onPressed: () {
                               // showConfirmDeleteDialog(
-                              //     index, setlist[index].name);
+                              //     index, filteredSetlist[index].name);
                               showOptionBottomSheet(context, index);
                             },
                             icon: const Icon(Icons.more_horiz),

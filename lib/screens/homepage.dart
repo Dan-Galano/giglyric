@@ -16,7 +16,7 @@ class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
 
   List screens = [
-    HomeScreen(),
+    const HomeScreen(),
     const SetlistScreen(),
     SearchScreen(),
   ];

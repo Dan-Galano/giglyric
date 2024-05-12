@@ -6,7 +6,7 @@ import 'package:galano_final_project/screens/lyrics.dart';
 import 'package:gap/gap.dart';
 
 class HomeScreen extends StatefulWidget {
-  HomeScreen({super.key});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -18,8 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     fetchLyrics();
   }
-
   List<SongLyrics> downloadedSongsList = [];
+  List<SongLyrics> filteredSongsList = [];
 
   Future<void> fetchLyrics() async {
     downloadedSongsList.clear();
@@ -27,8 +27,19 @@ class _HomeScreenState extends State<HomeScreen> {
       SongLyrics songLyrics = lyricsBox.getAt(i) as SongLyrics;
       setState(() {
         downloadedSongsList.add(songLyrics);
+        filteredSongsList = List.from(downloadedSongsList);
       });
     }
+  }
+
+  void filterSongs(String query) {
+    setState(() {
+      filteredSongsList = downloadedSongsList
+          .where((song) =>
+              song.title.toLowerCase().contains(query.toLowerCase()) ||
+              song.artist.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
   }
 
   Future<void> showConfirmDeleteDialog(int index, SongLyrics song) async {
@@ -71,13 +82,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //BACKLOGS:
   //1 Dapat madelete din setlist - DONE
-  //2 Searching
+  //2 Searching - Done
   //3 Remove song from setlist - DONE
-  //4 on lyrics screen, show download button - Wag na ito
+  //home_screen add to setlist yung song :)
+
+  //BUGS:
+  //1 adding song in setlist sa search screen - DONE
+  //2 edit setlist - DONE
+
+  //after modify -> create, maclclear yung list tapos matitira yung inadd - DONE
 
   void deleteSong(int index) {
-    // lyricsBox.deleteAt(index);
-    
+    lyricsBox.deleteAt(index);
     fetchLyrics();
   }
 
@@ -99,6 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: MediaQuery.of(context).size.width * 0.85,
                       child: TextField(
                         textAlignVertical: TextAlignVertical.center,
+                        onChanged: (value) {
+                          filterSongs(value);
+                        },
                         decoration: InputDecoration(
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 20),
@@ -138,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: downloadedSongsList.length,
+                  itemCount: filteredSongsList.length,
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -148,19 +167,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () {
                             Navigator.of(context).push(MaterialPageRoute(
                               builder: (context) => LyricsScreen(
-                                songLyrics: downloadedSongsList[index],
+                                songLyrics: filteredSongsList[index],
                               ),
                             ));
                           },
                           title: Text(
-                            downloadedSongsList[index].title,
+                            filteredSongsList[index].title,
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(downloadedSongsList[index].artist),
                           trailing: IconButton(
                             onPressed: () {
                               showConfirmDeleteDialog(
-                                  index, downloadedSongsList[index]);
+                            downloadedSongsList.indexOf(filteredSongsList[index]),
+                            filteredSongsList[index]);
                               print(index);
                             },
                             icon: const Icon(Icons.close),

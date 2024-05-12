@@ -271,7 +271,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             );
       });
-      setlistBox.put(index + 1, setlist[index]);
+      setlistBox.add(setlist[index]);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Saved to (${setlist[index].name})"),
@@ -422,19 +422,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     date = "Unknown date";
                   } else {
                     date = dateCon.text;
-                  }
-                  setState(() {
-                    setlist.add(
-                      Setlist(
-                        id: setlist.length,
-                        name: nameCon.text,
-                        date: date,
-                        songs: [],
-                      ),
-                    );
-                  });
-                  setlistBox.put(
-                    setlist.length,
+                  }                  
+                  setlistBox.add(
                     Setlist(
                       id: setlist.length,
                       name: nameCon.text,
@@ -442,6 +431,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       songs: [],
                     ),
                   );
+                  setState(() {
+                    fetchSetlist();
+                  });
                   print("SETLIST SIZE AFTER CREATE: ${setlist.length}");
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
