@@ -32,7 +32,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Setlist> setlist = []; //to add sa setlist
 
   static List<Song> songList = [
-    Song(songId: 135062, title: "Ignorance", artist: "Paramore"),
+    // Song(songId: 135062, title: "Ignorance", artist: "Paramore"),
   ];
 
   int prevSongId = 0;
@@ -45,7 +45,7 @@ class _SearchScreenState extends State<SearchScreen> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   Map<String, String> headers = {
-    'X-RapidAPI-Key': '57f1fbaf59mshbefe6f1c5f28d6fp12ddd7jsnedb955315929',
+    'X-RapidAPI-Key': '97a1572803msh534cdea43cef976p14888bjsnc65468b36f91',
     'X-RapidAPI-Host': 'genius-song-lyrics1.p.rapidapi.com',
   };
 
@@ -248,36 +248,44 @@ class _SearchScreenState extends State<SearchScreen> {
     String lyricsUrl =
         'https://genius-song-lyrics1.p.rapidapi.com/song/lyrics/?id=$songId';
     //Get song lyrics
-    final responseLyrics =
-        await http.get(Uri.parse(lyricsUrl), headers: headers);
+    final responseLyrics = await http.get(Uri.parse(lyricsUrl), headers: headers);
 
     if (responseLyrics.statusCode == 200) {
       print("+1 request (download song)");
       final jsonData = jsonDecode(responseLyrics.body);
       var document;
 
-      setState(() {
-        //convert html to text
-        String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
-        document = parse(htmlData.replaceAll('<br>', '\n'));
+    setState(() {
+      //convert html to text
+      String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
+      document = parse(htmlData.replaceAll('<br>', '\n'));
 
-        setlist[index].songs.insert(
-              setlist[index].songs.length,
-              SongLyrics(
-                id: songId,
-                title: jsonData['lyrics']['tracking_data']['title'],
-                artist: jsonData['lyrics']['tracking_data']['primary_artist'],
-                lyrics: document.body!.text,
-              ),
-            );
-      });
-      setlistBox.add(setlist[index]);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Saved to (${setlist[index].name})"),
-        ),
-      );
-      downloadLyrics(songId); //add to downloads na rin
+      setlist[index].songs.insert(
+            setlist[index].songs.length,
+            SongLyrics(
+              id: songId,
+              title: jsonData['lyrics']['tracking_data']['title'],
+              artist: jsonData['lyrics']['tracking_data']['primary_artist'],
+              lyrics: document.body!.text,
+            ),
+          );
+    });
+    await setlistBox.clear();
+    for (var item in setlist) {
+      await setlistBox.add(item);
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Saved to (${setlist[index].name})"),
+      ),
+    );
+    for (var song in dlLyrics) { //check if song is already downloaded
+      if (song.id == songId) {
+        print('song is already downloaded.');
+        return;
+      }
+    }
+    downloadLyrics(songId); //add to downloads na rin
     } else {
       print("Request failed with status: ${responseLyrics.statusCode}");
     }
@@ -415,15 +423,15 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   String date;
                   if (dateCon.text.isEmpty || dateCon.text == "") {
                     date = "Unknown date";
                   } else {
                     date = dateCon.text;
-                  }                  
-                  setlistBox.add(
+                  }
+                  await setlistBox.add(
                     Setlist(
                       id: setlist.length,
                       name: nameCon.text,

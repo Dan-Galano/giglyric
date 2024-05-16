@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("Setlist (${song.title}) has been deleted."),
+                    content: Text("Song (${song.title}) has been deleted."),
                   ),
                 );
               },
