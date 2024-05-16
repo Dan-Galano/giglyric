@@ -42,8 +42,8 @@ class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Delete?"),
-          content: const Text("Are you sure you want to delete this?"),
+          title: const Text("Remove?"),
+          content: Text("Remove this song from (${setlist.name})?"),
           actions: [
             TextButton(
               onPressed: () {
