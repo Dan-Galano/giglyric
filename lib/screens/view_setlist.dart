@@ -60,7 +60,7 @@ class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("Song ($songName) has been deleted."),
+                    content: Text("Song ($songName) has been removed."),
                   ),
                 );
               },
@@ -80,7 +80,7 @@ class _ViewSetlistScreenState extends State<ViewSetlistScreen> {
       songs.removeAt(index);
       setlist.songs = songs;
     });
-    setlistBox.put(widget.setlistIndex + 1, setlist);
+    setlistBox.put(widget.setlistIndex, setlist);
     // fetchSetlist(widget)
   }
 

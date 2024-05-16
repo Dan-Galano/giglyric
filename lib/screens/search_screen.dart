@@ -32,7 +32,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Setlist> setlist = []; //to add sa setlist
 
   static List<Song> songList = [
-    // Song(songId: 135062, title: "Ignorance", artist: "Paramore"),
+    Song(songId: 135062, title: "Ignorance", artist: "Paramore"),
   ];
 
   int prevSongId = 0;
@@ -51,12 +51,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> fetchSetlist() async {
     setlist.clear();
-    for (int i = 0; i < setlistBox.length; i++) {
-      Setlist setlistData = setlistBox.getAt(i) as Setlist;
-      setState(() {
-        setlist.add(setlistData);
-      });
-    }
+    setState(() {
+      for (var item in setlistBox.values) {
+        setlist.add(item);
+      }
+    });
   }
 
   Future<void> searchSong(String input) async {
@@ -248,44 +247,46 @@ class _SearchScreenState extends State<SearchScreen> {
     String lyricsUrl =
         'https://genius-song-lyrics1.p.rapidapi.com/song/lyrics/?id=$songId';
     //Get song lyrics
-    final responseLyrics = await http.get(Uri.parse(lyricsUrl), headers: headers);
+    final responseLyrics =
+        await http.get(Uri.parse(lyricsUrl), headers: headers);
 
     if (responseLyrics.statusCode == 200) {
       print("+1 request (download song)");
       final jsonData = jsonDecode(responseLyrics.body);
       var document;
 
-    setState(() {
-      //convert html to text
-      String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
-      document = parse(htmlData.replaceAll('<br>', '\n'));
+      setState(() {
+        //convert html to text
+        String htmlData = jsonData['lyrics']['lyrics']['body']['html'];
+        document = parse(htmlData.replaceAll('<br>', '\n'));
 
-      setlist[index].songs.insert(
-            setlist[index].songs.length,
-            SongLyrics(
-              id: songId,
-              title: jsonData['lyrics']['tracking_data']['title'],
-              artist: jsonData['lyrics']['tracking_data']['primary_artist'],
-              lyrics: document.body!.text,
-            ),
-          );
-    });
-    await setlistBox.clear();
-    for (var item in setlist) {
-      await setlistBox.add(item);
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Saved to (${setlist[index].name})"),
-      ),
-    );
-    for (var song in dlLyrics) { //check if song is already downloaded
-      if (song.id == songId) {
-        print('song is already downloaded.');
-        return;
+        setlist[index].songs.insert(
+              setlist[index].songs.length,
+              SongLyrics(
+                id: songId,
+                title: jsonData['lyrics']['tracking_data']['title'],
+                artist: jsonData['lyrics']['tracking_data']['primary_artist'],
+                lyrics: document.body!.text,
+              ),
+            );
+      });
+      await setlistBox.clear();
+      for (var item in setlist) {
+        await setlistBox.add(item);
       }
-    }
-    downloadLyrics(songId); //add to downloads na rin
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Saved to (${setlist[index].name})"),
+        ),
+      );
+      for (var song in dlLyrics) {
+        //check if song is already downloaded
+        if (song.id == songId) {
+          print('song is already downloaded.');
+          return;
+        }
+      }
+      downloadLyrics(songId); //add to downloads na rin
     } else {
       print("Request failed with status: ${responseLyrics.statusCode}");
     }
