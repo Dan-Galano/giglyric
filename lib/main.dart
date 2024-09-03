@@ -3,6 +3,7 @@ import 'package:galano_final_project/data/hive_boxes.dart';
 import 'package:galano_final_project/models/lyrics.dart';
 import 'package:galano_final_project/models/setlist.dart';
 import 'package:galano_final_project/screens/homepage.dart';
+import 'package:galano_final_project/screens/splash_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
@@ -25,7 +26,7 @@ class GigLyricApp extends StatelessWidget {
         fontFamily: 'Montserrat',
       ),
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: const SplashScreen(),
     );
   }
 }
